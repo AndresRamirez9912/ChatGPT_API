@@ -1,10 +1,5 @@
 package models
 
-type Client struct {
-	Api_Key      string
-	Organization string
-}
-
 type RequestBody struct {
 	Model       string    `json:"model"`
 	Message     []Message `json:"messages"`

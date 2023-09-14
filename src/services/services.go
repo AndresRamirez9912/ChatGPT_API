@@ -6,7 +6,7 @@ import (
 	"GoGPT/src/utils"
 	"bytes"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"io"
 	"log"
 	"mime/multipart"
@@ -14,10 +14,10 @@ import (
 	"os"
 )
 
-func SendPromp(promp string) string {
+func SendPromp(model string, promp string) (string, error) {
 	// Create the requests' body
 	body := models.RequestBody{
-		Model: "gpt-3.5-turbo",
+		Model: model,
 		Message: []models.Message{
 			{
 				Role:    "user",
@@ -30,11 +30,13 @@ func SendPromp(promp string) string {
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
 		log.Println("Error serialization the request ", err)
+		return constants.NO_RESPONSE, err
 	}
 
 	bodyResponse, err := utils.CreateSendRequest("POST", constants.URL_COMPLETION, jsonBody)
 	if err != nil {
 		log.Println("Error creating / sending the request", err)
+		return constants.NO_RESPONSE, err
 	}
 
 	// Unmarshall the body
@@ -42,21 +44,23 @@ func SendPromp(promp string) string {
 	err = json.Unmarshal(bodyResponse, response)
 	if err != nil {
 		log.Println("Error unmarshalling the body response ", err)
+		return constants.NO_RESPONSE, err
 	}
 
 	// Check the response
 	for _, v := range response.Choices {
-		return v.Message.Content
+		return v.Message.Content, nil
 	}
 
-	return constants.NO_RESPONSE
+	return constants.NO_RESPONSE, errors.New("There are not responses")
 }
 
-func UploadFile(fileName string) {
+func UploadFile(fileName string) (*models.FileUploadResponse, error) {
 	// Open the file to send
 	file, err := os.Open(fileName)
 	if err != nil {
 		log.Println("Error opening the file ", err)
+		return nil, err
 	}
 	defer file.Close()
 
@@ -68,31 +72,37 @@ func UploadFile(fileName string) {
 	purposeField, err := writer.CreateFormField("purpose")
 	if err != nil {
 		log.Println("Error creating the purpose field ", err)
+		return nil, err
 	}
 	_, err = io.WriteString(purposeField, constants.FINE_TUNING_PURPOSE)
 	if err != nil {
 		log.Println("Error writing in the purpose field ", err)
+		return nil, err
 	}
 
 	fileBody, err := writer.CreateFormField("file")
 	if err != nil {
 		log.Println("Error creating the file field ", err)
+		return nil, err
 	}
 	_, err = io.WriteString(fileBody, fileName)
 	if err != nil {
 		log.Println("Error writing in the purpose field ", err)
+		return nil, err
 	}
 
 	// Create the form field
 	fileField, err := writer.CreateFormFile("file", fileName)
 	if err != nil {
 		log.Println("Error creating the fileField ", err)
+		return nil, err
 	}
 
 	// Copy the file content to the form file field
 	_, err = io.Copy(fileField, file)
 	if err != nil {
 		log.Println("Error copying file content ", err)
+		return nil, err
 	}
 
 	// Close the multipar writer
@@ -102,6 +112,7 @@ func UploadFile(fileName string) {
 	req, err := http.NewRequest("POST", constants.URL_UPLOAD_FILE, buffer)
 	if err != nil {
 		log.Println("Error creating the request ", err)
+		return nil, err
 	}
 
 	// Set the heaers
@@ -113,6 +124,7 @@ func UploadFile(fileName string) {
 	res, err := client.Do(req)
 	if err != nil {
 		log.Println("Error sending the request ", err)
+		return nil, err
 	}
 	defer res.Body.Close()
 
@@ -120,30 +132,31 @@ func UploadFile(fileName string) {
 	err = json.NewDecoder(res.Body).Decode(response)
 	if err != nil {
 		log.Println("Error decoding the response ", err)
-		return
+		return nil, err
 	}
 
-	fmt.Println(res.Body)
+	return response, nil
+
 }
 
-func ListFiles() {
+func ListFiles() (*models.ListFilesResponse, error) {
 	res, err := utils.CreateSendRequest("GET", constants.URL_LIST_UPLOADED_FILES, nil)
 	if err != nil {
 		log.Println("Error creating / sending the request ", err)
-		return
+		return nil, err
 	}
 
 	response := &models.ListFilesResponse{}
 	err = json.Unmarshal(res, response)
 	if err != nil {
 		log.Println("Error parsing the request request ", err)
-		return
+		return nil, err
 	}
 
-	fmt.Printf("%+v\n", response)
+	return response, nil
 }
 
-func CreateFineTuning(tuningFile string) {
+func CreateFineTuning(tuningFile string) (*models.CreateFineTuningResponse, error) {
 	// Create Body request
 	body := &models.CreateFineTuningBody{
 		Training_file: tuningFile,
@@ -153,11 +166,13 @@ func CreateFineTuning(tuningFile string) {
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
 		log.Println("Error serialization the request ", err)
+		return nil, err
 	}
 
 	bodyResponse, err := utils.CreateSendRequest("POST", constants.URL_CREATE_FINE_TUNING, jsonBody)
 	if err != nil {
 		log.Println("Error creating / sending the request", err)
+		return nil, err
 	}
 
 	// Unmarshall the body
@@ -165,8 +180,27 @@ func CreateFineTuning(tuningFile string) {
 	err = json.Unmarshal(bodyResponse, response)
 	if err != nil {
 		log.Println("Error unmarshalling the body response ", err)
+		return nil, err
 	}
 
-	fmt.Println(string(bodyResponse))
-	fmt.Printf("%+v", response)
+	return response, nil
+}
+
+func GetFineTuningInfo(id string) (*models.FineTuningInfoResponse, error) {
+	// Create the request
+	bodyResponse, err := utils.CreateSendRequest("GET", constants.URL_GET_INFO_FINE_TUNING+id, nil)
+	if err != nil {
+		log.Println("Error creating / sending the request", err)
+		return nil, err
+	}
+
+	// Unmarshall the body
+	response := &models.FineTuningInfoResponse{}
+	err = json.Unmarshal(bodyResponse, response)
+	if err != nil {
+		log.Println("Error unmarshalling the body response ", err)
+		return nil, err
+	}
+
+	return response, nil
 }

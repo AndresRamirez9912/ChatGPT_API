@@ -69,3 +69,21 @@ type CreateFineTuningResponse struct {
 	ValidationFile string   `json:"validation_file"`
 	TrainingFile   string   `json:"training_file"`
 }
+
+type FineTuningInfoResponse struct {
+	Object          string   `json:"object"`
+	ID              string   `json:"id"`
+	Model           string   `json:"model"`
+	CreatedAt       int64    `json:"created_at"`
+	FinishedAt      int64    `json:"finished_at"`
+	FineTunedModel  string   `json:"fine_tuned_model"`
+	OrganizationID  string   `json:"organization_id"`
+	ResultFiles     []string `json:"result_files"`
+	Status          string   `json:"status"`
+	ValidationFile  string   `json:"validation_file"`
+	TrainingFile    string   `json:"training_file"`
+	Hyperparameters struct {
+		NEpochs int `json:"n_epochs"`
+	} `json:"hyperparameters"`
+	TrainedTokens int `json:"trained_tokens"`
+}

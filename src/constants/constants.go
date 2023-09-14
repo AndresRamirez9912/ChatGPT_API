@@ -17,8 +17,13 @@ const (
 	URL_FINE_TUNING         = "https://api.openai.com/v1/fine_tuning/jobs"
 	URL_UPLOAD_FILE         = "https://api.openai.com/v1/files"
 	URL_LIST_UPLOADED_FILES = "https://api.openai.com/v1/files"
+	URL_CREATE_FINE_TUNING  = "https://api.openai.com/v1/fine_tuning/jobs"
 )
 
 const (
 	FINE_TUNING_PURPOSE = "fine-tune"
+)
+
+const (
+	MODEL_GPT_3_5_TURBO = "gpt-3.5-turbo"
 )

@@ -24,5 +24,8 @@ func main() {
 	// services.UploadFile("train.jsonl")
 
 	// List Files uploaded
-	services.ListFiles()
+	// services.ListFiles()
+
+	// Create fine Tuning job
+	services.CreateFineTuning("file-u5v8rk8xZ3CmkNEufBEDDUXA")
 }

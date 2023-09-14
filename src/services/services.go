@@ -142,3 +142,31 @@ func ListFiles() {
 
 	fmt.Printf("%+v\n", response)
 }
+
+func CreateFineTuning(tuningFile string) {
+	// Create Body request
+	body := &models.CreateFineTuningBody{
+		Training_file: tuningFile,
+		Model:         constants.MODEL_GPT_3_5_TURBO,
+	}
+
+	jsonBody, err := json.Marshal(body)
+	if err != nil {
+		log.Println("Error serialization the request ", err)
+	}
+
+	bodyResponse, err := utils.CreateSendRequest("POST", constants.URL_CREATE_FINE_TUNING, jsonBody)
+	if err != nil {
+		log.Println("Error creating / sending the request", err)
+	}
+
+	// Unmarshall the body
+	response := &models.CreateFineTuningResponse{}
+	err = json.Unmarshal(bodyResponse, response)
+	if err != nil {
+		log.Println("Error unmarshalling the body response ", err)
+	}
+
+	fmt.Println(string(bodyResponse))
+	fmt.Printf("%+v", response)
+}

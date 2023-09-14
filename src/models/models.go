@@ -46,3 +46,8 @@ type FileUploadResponse struct {
 	Purpose    string `json:"purpose"`
 	Status     string `json:"status"`
 }
+
+type ListFilesResponse struct {
+	Data   []FileUploadResponse `json:"data"`
+	Object string               `json:"object"`
+}

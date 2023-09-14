@@ -125,3 +125,20 @@ func UploadFile(fileName string) {
 
 	fmt.Println(res.Body)
 }
+
+func ListFiles() {
+	res, err := utils.CreateSendRequest("GET", constants.URL_LIST_UPLOADED_FILES, nil)
+	if err != nil {
+		log.Println("Error creating / sending the request ", err)
+		return
+	}
+
+	response := &models.ListFilesResponse{}
+	err = json.Unmarshal(res, response)
+	if err != nil {
+		log.Println("Error parsing the request request ", err)
+		return
+	}
+
+	fmt.Printf("%+v\n", response)
+}

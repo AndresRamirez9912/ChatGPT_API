@@ -20,6 +20,9 @@ func main() {
 	// response := services.SendPromp("Hola")
 	// fmt.Println(response)
 
-	// Upload Model
-	services.UploadFile("train.jsonl")
+	// Upload training file
+	// services.UploadFile("train.jsonl")
+
+	// List Files uploaded
+	services.ListFiles()
 }

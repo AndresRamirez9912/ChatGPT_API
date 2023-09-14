@@ -3,11 +3,15 @@ package services
 import (
 	"GoGPT/src/constants"
 	"GoGPT/src/models"
+	"GoGPT/src/utils"
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"fmt"
+	"io"
 	"log"
+	"mime/multipart"
 	"net/http"
+	"os"
 )
 
 func SendPromp(promp string) string {
@@ -28,14 +32,80 @@ func SendPromp(promp string) string {
 		log.Println("Error serialization the request ", err)
 	}
 
+	bodyResponse, err := utils.CreateSendRequest("POST", constants.URL_COMPLETION, jsonBody)
+	if err != nil {
+		log.Println("Error creating / sending the request", err)
+	}
+
+	// Unmarshall the body
+	response := &models.GPTResponse{}
+	err = json.Unmarshal(bodyResponse, response)
+	if err != nil {
+		log.Println("Error unmarshalling the body response ", err)
+	}
+
+	// Check the response
+	for _, v := range response.Choices {
+		return v.Message.Content
+	}
+
+	return constants.NO_RESPONSE
+}
+
+func UploadFile(fileName string) {
+	// Open the file to send
+	file, err := os.Open(fileName)
+	if err != nil {
+		log.Println("Error opening the file ", err)
+	}
+	defer file.Close()
+
+	// Create Multipart writer
+	buffer := &bytes.Buffer{} // Buffer to store the request body
+	writer := multipart.NewWriter(buffer)
+
+	// Create the Fields
+	purposeField, err := writer.CreateFormField("purpose")
+	if err != nil {
+		log.Println("Error creating the purpose field ", err)
+	}
+	_, err = io.WriteString(purposeField, constants.FINE_TUNING_PURPOSE)
+	if err != nil {
+		log.Println("Error writing in the purpose field ", err)
+	}
+
+	fileBody, err := writer.CreateFormField("file")
+	if err != nil {
+		log.Println("Error creating the file field ", err)
+	}
+	_, err = io.WriteString(fileBody, fileName)
+	if err != nil {
+		log.Println("Error writing in the purpose field ", err)
+	}
+
+	// Create the form field
+	fileField, err := writer.CreateFormFile("file", fileName)
+	if err != nil {
+		log.Println("Error creating the fileField ", err)
+	}
+
+	// Copy the file content to the form file field
+	_, err = io.Copy(fileField, file)
+	if err != nil {
+		log.Println("Error copying file content ", err)
+	}
+
+	// Close the multipar writer
+	writer.Close()
+
 	// Create request
-	req, err := http.NewRequest("POST", constants.COMPLETION_URL, bytes.NewBuffer(jsonBody))
+	req, err := http.NewRequest("POST", constants.URL_UPLOAD_FILE, buffer)
 	if err != nil {
 		log.Println("Error creating the request ", err)
 	}
 
 	// Set the heaers
-	req.Header.Add(constants.CONTENT_TYPE, constants.APPLICATION_JSON)
+	req.Header.Add(constants.CONTENT_TYPE, writer.FormDataContentType())
 	req.Header.Add(constants.AUTHORIZATION, "Bearer "+models.GptClient.Api_Key)
 
 	// Send Request
@@ -46,25 +116,12 @@ func SendPromp(promp string) string {
 	}
 	defer res.Body.Close()
 
-	bodyResponse, err := ioutil.ReadAll(res.Body)
+	response := &models.FileUploadResponse{}
+	err = json.NewDecoder(res.Body).Decode(response)
 	if err != nil {
-		log.Println("Error reading the body response ", err)
+		log.Println("Error decoding the response ", err)
+		return
 	}
 
-	// Unmarshall the body
-	response := &models.GPTResponse{}
-	err = json.Unmarshal(bodyResponse, response)
-	if err != nil {
-		log.Println("Error unmarshalling the body response ", err)
-	}
-
-	for _, v := range response.Choices {
-		return v.Message.Content
-	}
-
-	return constants.NO_RESPONSE
-}
-
-func TrainModel() {
-
+	fmt.Println(res.Body)
 }

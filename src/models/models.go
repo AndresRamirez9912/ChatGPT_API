@@ -31,3 +31,18 @@ type GPTResponse struct {
 	Choices []Choice `json:"choices"`
 	Usage   Usage    `json:"usage"`
 }
+
+type FileUploadBody struct {
+	Purpose string `json:"purpose"`
+	File    string `json:"file"`
+}
+
+type FileUploadResponse struct {
+	Id         string `json:"id"`
+	Object     string `json:"object"`
+	Bytes      int    `json:"bytes"`
+	Created_at int32  `json:"created_at"`
+	FileName   string `json:"fileName"`
+	Purpose    string `json:"purpose"`
+	Status     string `json:"status"`
+}
